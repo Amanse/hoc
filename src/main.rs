@@ -16,10 +16,26 @@ struct  Args {
     raw_json: bool,
     #[clap(short, long, action=clap::ArgAction::SetTrue)]
     json_header: bool,
+    #[clap(short='k', long, value_parser)]
+    auth_header_key: Option<String>,
+    #[clap(short='v', long, value_parser)]
+    auth_header_val: Option<String>,
 }
 
 fn main() {
     let cli = Args::parse();
+    let mut auth_tuple: (String, String) = ("".to_string(), "".to_string());
+
+    match cli.auth_header_key {
+        Some(k) => {
+            match cli.auth_header_val {
+                Some(v) => {auth_tuple = (k, v)},
+                None => panic!("Need auth header value if key is given")
+            }
+        },
+        None => {}
+    }
+    
 
     let method: Methods = {
         match cli.method {
@@ -28,7 +44,7 @@ fn main() {
         }
     };
 
-    let resp = make_request(cli.url, method, cli.json_header, cli.raw_json);
+    let resp = make_request(cli.url, method, cli.json_header, cli.raw_json, auth_tuple);
     println!("{}", resp);
 
 }
