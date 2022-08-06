@@ -10,32 +10,25 @@ use crate::request::make_request;
 struct  Args {
     #[clap(short,long,value_parser)]
     url: String,
-    #[clap(short,long, value_parser)]
-    method: Option<String>,
+    #[clap(arg_enum ,value_parser)]
+    method: Option<Methods>,
     #[clap(short, long, action)]
-    pretty_json: bool,
-    #[clap(short, long, action)]
+    raw_json: bool,
+    #[clap(short, long, action=clap::ArgAction::SetTrue)]
     json_header: bool,
 }
 
 fn main() {
     let cli = Args::parse();
 
-    let method_raw = cli.method.as_deref();
-    let json_header = cli.json_header;
-    let pretty_json = cli.pretty_json;
-
     let method: Methods = {
-        match method_raw {
-            Some("get") => Methods::Get,
-            Some("post")=> Methods::Post,
-            Some("put") => Methods::Put,
-            Some("delete") => Methods::Delete,
-            _ => Methods::Get,
+        match cli.method {
+            Some(v) => v,
+            None => Methods::Get,
         }
     };
 
-    let resp = make_request(cli.url, method, json_header, pretty_json);
+    let resp = make_request(cli.url, method, cli.json_header, cli.raw_json);
     println!("{}", resp);
 
 }
