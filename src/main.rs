@@ -1,5 +1,9 @@
 mod request;
 
+use std::collections::HashMap;
+use serde::{Serialize, Deserialize};
+use serde_json::Value;
+
 use clap::Parser;
 use request::Methods;
 
@@ -20,6 +24,14 @@ struct  Args {
     auth_header_key: Option<String>,
     #[clap(short='v', long, value_parser)]
     auth_header_val: Option<String>,
+    #[clap(short, long, value_parser)]
+    data: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct PostData {
+    #[serde(flatten)]
+    data: HashMap<String, String>
 }
 
 fn main() {
@@ -44,7 +56,17 @@ fn main() {
         }
     };
 
-    let resp = make_request(cli.url, method, cli.json_header, cli.raw_json, auth_tuple);
+    let post_data: Option<HashMap<String, String>> = {match cli.data {
+        Some(v) => {
+            serde_json::from_str(&v).unwrap()
+        },
+        None => {
+            None
+        }
+    }
+    };
+
+    let resp = make_request(cli.url, method, cli.json_header, cli.raw_json, auth_tuple, post_data);
     println!("{}", resp);
 
 }

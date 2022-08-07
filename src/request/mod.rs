@@ -1,5 +1,7 @@
  // use std::fmt::Display;
 
+use std::collections::HashMap;
+
 use clap::clap_derive::ArgEnum;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, ArgEnum)]
@@ -14,12 +16,20 @@ struct CRequest {
     if_json:bool,
     raw_js:bool,
     auth_tuple: (String, String),
+    post_data: Option<HashMap<String, String>>,
     req: ureq::Request
 }
 
 impl CRequest {
    
-    fn new(url: String, method: Methods, if_json: bool, raw_js: bool, auth_tuple: (String, String)) -> CRequest {
+    fn new(
+        url: String,
+        method: Methods,
+        if_json: bool,
+        raw_js: bool,
+        auth_tuple: (String, String),
+        post_data: Option<HashMap<String, String>>
+        ) -> CRequest {
         let req: ureq::Request;
         req = match method {
             Methods::Get => ureq::get(&url),
@@ -27,7 +37,13 @@ impl CRequest {
             Methods::Delete => ureq::delete(&url),
             Methods::Put => ureq::put(&url),
         };
-        CRequest {if_json:if_json, raw_js: raw_js, auth_tuple: auth_tuple, req: req }
+        CRequest {
+            if_json:if_json,
+            raw_js: raw_js,
+            auth_tuple: auth_tuple,
+            req: req,
+            post_data: post_data, 
+        }
     }
     
     fn handle_auth_tuple(&mut self) -> &mut CRequest {
@@ -58,8 +74,16 @@ impl CRequest {
         }
     }
 
+
     fn make_req(&self) -> String {
-        let res = self.req.clone().call().unwrap();
+        let res = match &self.post_data {
+            Some(v) => {
+               self.req.clone().send_json(v).unwrap()
+                },
+            None => {
+                self.req.clone().call().unwrap()
+            }
+            };
         if !self.raw_js {
             jsonxf::pretty_print(&res.into_string().unwrap()).unwrap()
         } else {
@@ -67,55 +91,23 @@ impl CRequest {
         }
     } 
 
+    }
+
+pub fn make_request(
+    url: String,
+    method: Methods,
+    if_json: bool,
+    raw_js: bool,
+    auth_tuple: (String, String),
+    post_data: Option<HashMap<String,String>>
+    ) -> String{
+    CRequest::new(
+        url,
+        method,
+        if_json,
+        raw_js,
+        auth_tuple,
+        post_data,
+        ).handle_json_head().handle_auth_tuple().make_req()
 }
 
-pub fn make_request(url: String, method: Methods, if_json: bool, raw_js: bool, auth_tuple: (String, String)) -> String{
-    CRequest::new(url, method, if_json, raw_js, auth_tuple).handle_json_head().handle_auth_tuple().make_req()
-}
-
-// fn make_get(url: String, if_json: bool, raw_js: bool) -> String {
-//     let req = ureq::get(&url);
-//     let st = req.call().unwrap().into_string().unwrap();
-//     if !raw_js {
-//         jsonxf::pretty_print(&st).unwrap()
-//     } else {
-//         st.to_string()
-//     }
-// }
-//     
-// fn make_post(url: String, if_json: bool) -> String {
-//     todo!()
-//
-// }
-// fn make_delete(url: String, if_json: bool, raw_js: bool) -> String {
-//     let res;
-//     if if_json {
-//         let req = ureq::delete(&url).set("Content-Type", "application/json");
-//         res = req.call().unwrap();
-//     } else {
-//         let req = ureq::get(&url);
-//         res = req.call().unwrap();
-//     }
-//     let st = res.into_string().unwrap();
-//     if !raw_js {
-//         jsonxf::pretty_print(&st).unwrap()
-//     } else {
-//         st
-//     }
-// }
-//
-// fn make_put(url: String, if_json: bool) -> String {
-//     todo!()
-// }
-//
-
-// impl Display for Methods {
-//      fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match &self {
-//             Methods::Get => write!(f, "get"),
-//             Methods::Post => write!(f, "post"),
-//             Methods::Put => write!(f, "put"),
-//             Methods::Delete => write!(f, "delete"),
-//         }
-//     }
-// }

@@ -8,6 +8,6 @@ edition = "2021"
 [dependencies]
 clap = {version="3.2.16", features=["derive"]}
 jsonxf = "1.1.1"
-serde = "1.0.142"
+serde = {version="1.0.142", features=["derive"]}
 serde_json = "1.0.83"
 ureq = {version="2.5.0", features=["json"]}
