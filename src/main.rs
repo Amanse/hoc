@@ -2,7 +2,6 @@ mod request;
 
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
-use serde_json::Value;
 
 use clap::Parser;
 use request::Methods;
